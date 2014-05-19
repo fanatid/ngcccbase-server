@@ -1,0 +1,11 @@
+[server]
+host = localhost
+port = 28832
+
+[bitcoind]
+host = localhost
+port = 18332
+# user and password from bitcoin.conf
+user = bitcoinrpc
+password = uMXXbdR2D7gh8BDofJC47dB6WyBEa8sRmM1N4JyPHv6
+

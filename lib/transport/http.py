@@ -17,9 +17,16 @@ class BlockCount(LeafResource):
         request.write(str(result))
         request.finish()
 
+    def _errback(self, fail=None, request=None):
+        if request is None:
+            fail, request = None, fail
+        request.write(str(fail))
+        request.finish()
+
     def render_GET(self, request):
         d = Deferred()
         d.addCallback(self._callback, request)
+        d.addErrback(self._errback, request)
         self.blockchain.get_block_count(d)
         return NOT_DONE_YET
 

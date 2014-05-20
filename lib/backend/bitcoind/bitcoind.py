@@ -50,9 +50,12 @@ class BitcoinJSONRPC(object):
 
     def _json_loads(self, result, d):
         try:
-            d.callback(json.loads(result))
-        except:
+            data = json.loads(result)
+        except (ValueError, TypeError):
             d.errback()
+        if data.get('error') is not None:
+            d.errback(data['error'])
+        d.callback(data)
 
     def _request_callback(self, response):
         d1, d2 = defer.Deferred(), defer.Deferred()
@@ -71,4 +74,5 @@ class BitcoinJSONRPC(object):
             self.headers,
             StringProducer(json.dumps(data))
         )
-        return request.addCallback(self._request_callback)
+        request.addCallback(self._request_callback)
+        return request

@@ -73,4 +73,12 @@ class BitcoinJSONRPC(object):
             StringProducer(json.dumps(data))
         )
         response = json.loads((yield self._get_body(request)))
+
+        if response['error'] is not None:
+            raise JSONRPCException(response['error'])
+        if 'result' not in response:
+            raise JSONRPCException({
+                'code': -343,
+                'message': 'missing JSON-RPC result',
+            })
         defer.returnValue(response['result'])

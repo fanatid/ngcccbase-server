@@ -2,11 +2,15 @@ import json
 
 from twisted.web.resource import Resource
 from twisted.web.server import Site, NOT_DONE_YET
-from twisted.internet.defer import Deferred
+from twisted.internet import defer
 
 
 class RootResource(Resource):
     isLeaf = True
+
+    AVAILABLE_METHODS = {
+        'getblockcount': 'get_block_count',
+    }
 
     def __init__(self, blockchain):
         self.blockchain = blockchain
@@ -29,34 +33,22 @@ class RootResource(Resource):
             return 'params not list'
 
         method, params = query['method'], query['params']
-        if method == 'getblockcount':
-            return self.getblockcount(request, params)
+        if method in self.AVAILABLE_METHODS:
+            getattr(self, self.AVAILABLE_METHODS[method])(request, params)
+            return NOT_DONE_YET
 
         request.setResponseCode(400)
         return 'method not found'
 
-    def _common_errback(self, fail=None, request=None):
-        if request is None:
-            fail, request = None, fail
-        request.write(json.dumps({
-            'result': None,
-            'error': str(fail),
-        }))
+
+    def _finish_request(self, request, result, error):
+        request.write(json.dumps({'result': result, 'error': error}))
         request.finish()
 
-    def getblockcount(self, request, params):
-        d = Deferred()
-        d.addCallback(self._getblockcount_callback, request)
-        d.addErrback(self._common_errback, request)
-        self.blockchain.get_block_count(d)
-        return NOT_DONE_YET
-
-    def _getblockcount_callback(self, result, request):
-        request.write(json.dumps({
-            'result': result,
-            'error': None,
-        }))
-        request.finish()
+    @defer.inlineCallbacks
+    def get_block_count(self, request, params):
+        result = yield defer.maybeDeferred(self.blockchain.get_block_count)
+        self._finish_request(request, result, None)
 
 
 def get_HTTPFactory(config, blockchain):

@@ -2,6 +2,9 @@
 host = localhost
 port = 28832
 
+[store]
+path=/path/to/your/database
+
 [bitcoind]
 host = localhost
 port = 18332

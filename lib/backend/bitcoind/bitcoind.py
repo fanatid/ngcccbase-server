@@ -37,42 +37,40 @@ class BodyReceiver(protocol.Protocol):
         self.d.callback(self.buf)
 
 
+class JSONRPCException(Exception):
+    def __init__(self, rpc_error):
+        super(JSONRPCException, self).__init__('msg: %r  code: %r' %
+                (rpc_error['message'], rpc_error['code']))
+        self.error = rpc_error
+
+
 class BitcoinJSONRPC(object):
     def __init__(self, config):
-        self.agent = Agent(reactor)
+        self._agent = Agent(reactor)
 
-        self.bitcoind_url = 'http://%s:%s/' % (config.get('bitcoind', 'host'), config.get('bitcoind', 'port'))
+        self._bitcoind_url = 'http://%s:%s/' % (config.get('bitcoind', 'host'), config.get('bitcoind', 'port'))
         authpair = config.get('bitcoind', 'user') + ':' + config.get('bitcoind', 'password')
-        self.headers = Headers({
+        self._headers = Headers({
             'Authorization': [b"Basic " + base64.b64encode(authpair.encode('utf8'))],
             'Content-Type': ['application/x-www-form-urlencoded'],
         })
 
-    def _json_loads(self, result, d):
-        try:
-            data = json.loads(result)
-        except (ValueError, TypeError):
-            d.errback()
-        if data.get('error') is not None:
-            d.errback(data['error'])
-        d.callback(data)
+    def _get_body(self, response):
+        d = defer.Deferred()
+        response.deliverBody(BodyReceiver(d))
+        return d
 
-    def _request_callback(self, response):
-        d1, d2 = defer.Deferred(), defer.Deferred()
-        response.deliverBody(BodyReceiver(d1))
-        d1.addCallback(self._json_loads, d2)
-        return d2
-
+    @defer.inlineCallbacks
     def call(self, method, params=None):
         if params is None:
             params = []
         data = {"method": method, 'params': params, 'id': 'jsonrpc'}
 
-        request = self.agent.request(
+        request = yield self._agent.request(
             'POST',
-            self.bitcoind_url,
-            self.headers,
+            self._bitcoind_url,
+            self._headers,
             StringProducer(json.dumps(data))
         )
-        request.addCallback(self._request_callback)
-        return request
+        response = json.loads((yield self._get_body(request)))
+        defer.returnValue(response['result'])

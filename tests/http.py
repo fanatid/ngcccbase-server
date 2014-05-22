@@ -3,7 +3,7 @@ import urllib2
 import json
 
 
-class TestsTransportHTTP(unittest.TestCase):
+class TestTransportHTTP(unittest.TestCase):
     def setUp(self):
         self.server_url = "http://localhost:28832/"
 

@@ -5,6 +5,12 @@ port = 28832
 [store]
 path=/path/to/your/database
 
+[logging]
+logging=True
+filename=./server.log
+# available: info, warning, error
+level=info
+
 [bitcoind]
 host = localhost
 port = 18332

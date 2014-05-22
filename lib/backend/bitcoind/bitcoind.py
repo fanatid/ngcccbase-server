@@ -2,13 +2,13 @@ import base64, json
 
 from zope.interface import implements
 from twisted.internet import defer, protocol, reactor
-from twisted.web.client import Agent
-from twisted.web.http_headers import Headers
-from twisted.web.iweb import IBodyProducer
+from twisted.web import client, http_headers, iweb
+
+client._HTTP11ClientFactory.noisy = False
 
 
 class StringProducer(object):
-    implements(IBodyProducer)
+    implements(iweb.IBodyProducer)
 
     def __init__(self, body):
         self.body = body
@@ -46,11 +46,11 @@ class JSONRPCException(Exception):
 
 class BitcoinJSONRPC(object):
     def __init__(self, config):
-        self._agent = Agent(reactor)
+        self._agent = client.Agent(reactor)
 
         self._bitcoind_url = 'http://%s:%s/' % (config.get('bitcoind', 'host'), config.get('bitcoind', 'port'))
         authpair = config.get('bitcoind', 'user') + ':' + config.get('bitcoind', 'password')
-        self._headers = Headers({
+        self._headers = http_headers.Headers({
             'Authorization': [b"Basic " + base64.b64encode(authpair.encode('utf8'))],
             'Content-Type': ['application/x-www-form-urlencoded'],
         })

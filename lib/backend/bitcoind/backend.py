@@ -3,6 +3,7 @@ import json
 import hashlib
 
 from twisted.internet import defer, reactor
+from twisted.python import log
 
 import bitcoin.core
 from coloredcoinlib import CTransaction, ColorDefinition
@@ -101,8 +102,9 @@ class Backend(object):
                         self._headers += header_to_raw(block)
                     else:
                         self._headers = self._headers[:-80]
+                log.msg('New height: %d' % self.current_height)
         except Exception, e:
-            print e
+            log.err()
 
         self._next_update_headers = reactor.callLater(1, self._update_headers)
 

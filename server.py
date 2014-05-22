@@ -6,8 +6,9 @@ from twisted.internet import reactor
 
 import imp
 imp.load_module("ngcccbase_server", *imp.find_module("lib"))
+from ngcccbase_server.log import startLogging
 from ngcccbase_server.backend.bitcoind import Backend as BitcoindBackend
-from ngcccbase_server.transport import get_HTTPFactory
+from ngcccbase_server.transport.http import get_HTTPFactory
 
 
 def arg_parser():
@@ -32,6 +33,8 @@ def main():
     args = vars(parser.parse_args())
 
     config = load_config(args.get('conf'))
+
+    startLogging(config)
 
     backend = BitcoindBackend(config)
 

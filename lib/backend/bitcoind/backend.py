@@ -43,6 +43,25 @@ def hash_header(raw_header):
     return hashlib.sha256(hashlib.sha256(raw_header).digest()).digest()[::-1].encode('hex_codec')
 
 
+class AsyncCTransaction(CTransaction):
+    @defer.inlineCallbacks
+    def ensure_input_values(self):
+        if self.have_input_values:
+            return
+        for inp in self.inputs:
+            prev_tx_hash = inp.prevout.hash
+            if prev_tx_hash != 'coinbase':
+                txhex = yield self.bs.bitcoind.call('getrawtransaction', [prev_tx_hash])
+                txbin = bitcoin.core.x(txhex)
+                tx = bitcoin.core.CTransaction.deserialize(txbin)
+                prevtx = AsyncCTransaction.from_bitcoincore(prev_tx_hash, tx, self.bs)
+                inp.prevtx = prevtx
+                inp.value = prevtx.outputs[inp.prevout.n].value
+            else:
+                inp.value = 0  # TODO: value of coinbase tx?
+        self.have_input_values = True
+
+
 class Backend(object):
     def __init__(self, config):
         self._store_path = config.get('store', 'path')
@@ -179,7 +198,7 @@ class Backend(object):
             raw_transaction = yield self.bitcoind.call('getrawtransaction', [current_txhash])
             txbin = bitcoin.core.x(txhex)
             tx = bitcoin.core.CTransaction.deserialize(txbin)
-            current_tx = CTransaction.from_bitcoincore(txhash, tx, self) # Todo
+            current_tx = AsyncCTransaction.from_bitcoincore(txhash, tx, self)
             if not current_tx:
                 defer.returnValue(None)
 

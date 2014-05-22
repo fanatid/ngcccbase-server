@@ -6,7 +6,7 @@ from twisted.internet import reactor
 
 import imp
 imp.load_module("ngcccbase_server", *imp.find_module("lib"))
-from ngcccbase_server.backend.bitcoind import Blockchain
+from ngcccbase_server.backend.bitcoind import Backend as BitcoindBackend
 from ngcccbase_server.transport import get_HTTPFactory
 
 
@@ -33,11 +33,11 @@ def main():
 
     config = load_config(args.get('conf'))
 
-    blockchain = Blockchain(config)
+    backend = BitcoindBackend(config)
 
     reactor.listenTCP(
         int(config.get('server', 'port')),
-        get_HTTPFactory(config, blockchain),
+        get_HTTPFactory(config, backend),
         interface=socket.gethostbyname(config.get('server', 'host'))
     )
     reactor.run()

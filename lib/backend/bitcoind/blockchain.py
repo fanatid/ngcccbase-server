@@ -80,3 +80,6 @@ class Blockchain(object):
 
     def get_block_count(self):
         return self.current_height
+
+    def get_raw_transaction(self, txhash):
+        return self.bitcoind.call('getrawtransaction', [txhash])

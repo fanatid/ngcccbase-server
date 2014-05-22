@@ -9,7 +9,8 @@ class RootResource(Resource):
     isLeaf = True
 
     AVAILABLE_METHODS = {
-        'getblockcount': 'get_block_count',
+        'getblockcount':     'get_block_count',
+        'getrawtransaction': 'get_raw_transaction',
     }
 
     def __init__(self, blockchain):
@@ -48,6 +49,11 @@ class RootResource(Resource):
     @defer.inlineCallbacks
     def get_block_count(self, request, params):
         result = yield defer.maybeDeferred(self.blockchain.get_block_count)
+        self._finish_request(request, result, None)
+
+    @defer.inlineCallbacks
+    def get_raw_transaction(self, request, params):
+        result = yield defer.maybeDeferred(self.blockchain.get_raw_transaction, params[0])
         self._finish_request(request, result, None)
 
 
